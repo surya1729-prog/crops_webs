@@ -250,5 +250,6 @@ def serve_uploaded_image(filename):
 # 5. RUN THE FLASK APP
 # ==============================================================================
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # Get the cloud-assigned port, fallback to 5000 locally
+    app.run(host="0.0.0.0", port=port, debug=False)  # Listen on all network interfaces
 
