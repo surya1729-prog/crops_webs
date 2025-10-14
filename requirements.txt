@@ -3,5 +3,6 @@ numpy
 pickle-mixin
 joblib
 scikit-learn
+gunicorn
 #tensorflow   # only if pest detection enabled
 
