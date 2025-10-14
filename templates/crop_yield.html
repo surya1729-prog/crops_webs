@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crop Yield Prediction</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f0f4f8;
+      overflow-x: hidden;
+    }
+
+    .main-container {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: linear-gradient(135deg, #e0f2f1 0%, #d1c4e9 100%);
+      overflow: hidden;
+    }
+
+    .bg-shape {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      filter: blur(80px);
+      animation: pulse 20s infinite ease-in-out;
+    }
+    
+    .card {
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(25px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.15);
+      z-index: 10;
+      transition: all 0.3s ease;
+      animation: fadeInFromBottom 1s ease-out;
+    }
+
+    .form-input, .form-select {
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid #d1d5db;
+      transition: all 0.3s ease;
+    }
+
+    .form-input:focus, .form-select:focus {
+      background: white;
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+      transform: scale(1.02);
+    }
+
+    .btn-predict {
+      background: linear-gradient(45deg, #4f46e5, #7c3aed);
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+    }
+
+    .btn-predict:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 8px 25px rgba(79, 70, 229, 0.4);
+    }
+    
+    .error-message {
+        color: #ef4444;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        display: none;
+    }
+
+    /* Floating Crop Icons Animation */
+    .crop-icon-float {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      opacity: 0.5;
+      animation: float 8s ease-in-out infinite;
+    }
+    
+    /* Result Gauge Animation */
+    .gauge__circle--progress {
+        transition: stroke-dashoffset 1.5s ease-out;
+    }
+
+    /* Animations */
+    @keyframes float {
+      0% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-25px) rotate(15deg); }
+      100% { transform: translateY(0px) rotate(0deg); }
+    }
+
+    @keyframes fadeInFromBottom {
+      from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+    }
+
+    .form-row {
+        animation: fadeInFromBottom 0.5s ease-out forwards;
+        opacity: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="main-container">
+    <!-- Background Shapes -->
+    <div class="bg-shape" style="width: 300px; height: 300px; top: 10%; left: 5%; animation-delay: 0s;"></div>
+    <div class="bg-shape" style="width: 250px; height: 250px; bottom: 15%; right: 10%; animation-delay: 5s;"></div>
+
+    <!-- Floating Crop Icons -->
+    <img src="https://img.icons8.com/color/48/wheat.png" class="crop-icon-float" style="left: 10vw; top: 20vh; animation-delay: 0s;">
+    <img src="https://img.icons8.com/color/48/corn.png" class="crop-icon-float" style="left: 85vw; top: 30vh; animation-delay: 2s;">
+    <img src="https://img.icons8.com/color/48/rice-bowl.png" class="crop-icon-float" style="left: 15vw; top: 70vh; animation-delay: 4s;">
+    <img src="https://img.icons8.com/color/48/tomato.png" class="crop-icon-float" style="left: 90vw; top: 65vh; animation-delay: 1s;">
+
+    <!-- Main Card -->
+    <div class="card w-full max-w-4xl rounded-2xl p-6 md:p-10">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-800">🌾 Crop Yield Predictor</h1>
+        <p class="text-gray-600 mt-2">Enter farm data to forecast yield with smart recommendations.</p>
+      </div>
+
+      <!-- This form now submits data to the /crop-yield endpoint on your Flask server -->
+      <form id="predictionForm" action="{{ url_for('crop_yield') }}" method="post" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+        
+        <div class="form-row" style="animation-delay: 0.1s;">
+          <label for="AreaSelect" class="block text-sm font-medium text-gray-700 mb-1">Country / Area</label>
+          <select id="AreaSelect" name="Area" class="form-select w-full rounded-lg" required>
+            <option value="" disabled selected>Select a country</option>
+          </select>
+          <p class="error-message" id="AreaError">Please select a country.</p>
+        </div>
+
+        <div class="form-row" style="animation-delay: 0.2s;">
+            <label for="ItemSelect" class="block text-sm font-medium text-gray-700 mb-1">Crop / Item</label>
+            <select id="ItemSelect" name="Item" class="form-select w-full rounded-lg" required>
+              <option value="" disabled selected>Select a crop</option>
+            </select>
+            <p class="error-message" id="ItemError">Please select a crop.</p>
+        </div>
+
+        <div class="form-row" style="animation-delay: 0.3s;">
+          <label for="Year" class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+          <input type="number" class="form-input w-full rounded-lg" name="Year" id="Year" placeholder="e.g. 2024" required>
+          <p class="error-message" id="YearError">Please enter a valid year.</p>
+        </div>
+
+        <div class="form-row" style="animation-delay: 0.4s;">
+          <label for="average_rain_fall_mm_per_year" class="block text-sm font-medium text-gray-700 mb-1">Average Rainfall (mm/year)</label>
+          <input type="number" step="0.01" class="form-input w-full rounded-lg" name="average_rain_fall_mm_per_year" id="average_rain_fall_mm_per_year" placeholder="e.g. 1500.5" required>
+          <p class="error-message" id="rainfallError">Please enter a positive value.</p>
+        </div>
+
+        <div class="form-row" style="animation-delay: 0.5s;">
+          <label for="pesticides_tonnes" class="block text-sm font-medium text-gray-700 mb-1">Pesticides (tonnes)</label>
+          <input type="number" step="0.01" class="form-input w-full rounded-lg" name="pesticides_tonnes" id="pesticides_tonnes" placeholder="e.g. 120.75" required>
+          <p class="error-message" id="pesticidesError">Please enter a positive value.</p>
+        </div>
+
+        <div class="form-row" style="animation-delay: 0.6s;">
+          <label for="avg_temp" class="block text-sm font-medium text-gray-700 mb-1">Average Temperature (°C)</label>
+          <input type="number" step="0.01" class="form-input w-full rounded-lg" name="avg_temp" id="avg_temp" placeholder="e.g. 25.5" required>
+          <p class="error-message" id="tempError">Please enter a temperature.</p>
+        </div>
+
+        <!-- Predict Button -->
+        <div class="md:col-span-2 form-row" style="animation-delay: 0.7s;">
+          <button type="submit" id="predictBtn" class="btn-predict w-full text-white font-bold py-3 px-4 rounded-lg shadow-lg flex items-center justify-center text-lg">
+            <span id="btn-text">Predict Yield</span>
+            <svg id="loader" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </button>
+        </div>
+      </form>
+
+      <!-- This section will only be displayed if a prediction is passed from Flask -->
+      {% if prediction %}
+      <div id="result" class="mt-8 text-center" data-prediction="{{ prediction.split(': ')[1].split(' ')[0] }}">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Predicted Yield Analysis</h2>
+        <div class="flex flex-col md:flex-row items-center justify-center gap-8">
+            <!-- Gauge Chart -->
+            <div class="relative w-48 h-48">
+                <svg class="w-full h-full" viewBox="0 0 100 100">
+                    <circle class="text-gray-200" stroke-width="10" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
+                    <circle id="gauge-progress" class="text-indigo-500 gauge__circle--progress" stroke-width="10" stroke-linecap="round" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" style="stroke-dasharray: 283; stroke-dashoffset: 283; transform: rotate(-90deg); transform-origin: 50% 50%;" />
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <p class="text-3xl font-extrabold text-indigo-600" id="yieldValue">0.00</p>
+                    <p class="text-gray-500 text-sm">hg/ha</p>
+                </div>
+            </div>
+            <!-- Suggestion Box -->
+            <div id="suggestionBox" class="text-left bg-indigo-50 p-4 rounded-lg max-w-sm">
+                <h3 class="font-bold text-lg text-indigo-800 mb-1" id="suggestionTitle">Awaiting Prediction...</h3>
+                <p class="text-indigo-700" id="suggestionText">Enter your data and click predict to see our analysis and recommendations.</p>
+            </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <script>
+    // --- DATA FOR DROPDOWNS ---
+    const countries = ["Afghanistan", "Albania", "Algeria", "Angola", "Argentina", "Australia", "Austria", "Bangladesh", "Belarus", "Belgium", "Brazil", "Bulgaria", "Burkina Faso", "Cambodia", "Cameroon", "Canada", "Chile", "Colombia", "Croatia", "Czech Republic", "Denmark", "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Estonia", "Finland", "France", "Germany", "Ghana", "Greece", "Guatemala", "Honduras", "Hungary", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Italy", "Japan", "Jordan", "Kazakhstan", "Kenya", "Latvia", "Lebanon", "Libya", "Lithuania", "Madagascar", "Malawi", "Malaysia", "Mali", "Mauritania", "Mexico", "Morocco", "Mozambique", "Namibia", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "Norway", "Pakistan", "Papua New Guinea", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Saudi Arabia", "Senegal", "Slovakia", "South Africa", "South Korea", "Spain", "Sri Lanka", "Sudan", "Sweden", "Switzerland", "Syria", "Tajikistan", "Tanzania", "Thailand", "Tunisia", "Turkey", "Uganda", "Ukraine", "United Kingdom", "United States", "Uruguay", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"];
+    const crops = ["Cassava", "Maize", "Plantains and others", "Potatoes", "Rice", "Sorghum", "Soybeans", "Sweet potatoes", "Wheat", "Yams"];
+
+    // --- FORM VALIDATION ---
+    function validateForm() {
+        let isValid = true;
+        const inputs = [
+            { id: 'AreaSelect', errorId: 'AreaError', message: 'Please select a country.' },
+            { id: 'ItemSelect', errorId: 'ItemError', message: 'Please select a crop.' },
+            { id: 'Year', errorId: 'YearError', message: 'Please enter a valid year.', validator: val => /^\d{4}$/.test(val) && val > 1900 && val < 2100 },
+            { id: 'average_rain_fall_mm_per_year', errorId: 'rainfallError', message: 'Please enter a positive value.', validator: val => parseFloat(val) > 0 },
+            { id: 'pesticides_tonnes', errorId: 'pesticidesError', message: 'Please enter a non-negative value.', validator: val => parseFloat(val) >= 0 },
+            { id: 'avg_temp', errorId: 'tempError', message: 'Please enter a temperature.', validator: val => !isNaN(parseFloat(val)) }
+        ];
+
+        inputs.forEach(inputInfo => {
+            const inputEl = document.getElementById(inputInfo.id);
+            const errorEl = document.getElementById(inputInfo.errorId);
+            let isFieldValid = true;
+
+            if (!inputEl.value.trim()) {
+                isFieldValid = false;
+            } else if (inputInfo.validator && !inputInfo.validator(inputEl.value.trim())) {
+                isFieldValid = false;
+            }
+
+            if (!isFieldValid) {
+                errorEl.textContent = inputInfo.message;
+                errorEl.style.display = 'block';
+                inputEl.classList.add('border-red-500');
+                isValid = false;
+            } else {
+                errorEl.style.display = 'none';
+                inputEl.classList.remove('border-red-500');
+            }
+        });
+        
+        return isValid;
+    }
+
+    // --- MAIN SCRIPT ---
+    document.addEventListener('DOMContentLoaded', function() {
+      // --- POPULATE DROPDOWNS ---
+      const areaSelect = document.getElementById('AreaSelect');
+      const itemSelect = document.getElementById('ItemSelect');
+      
+      countries.forEach(country => {
+          const option = document.createElement('option');
+          option.value = country;
+          option.textContent = country;
+          areaSelect.appendChild(option);
+      });
+
+      crops.forEach(crop => {
+          const option = document.createElement('option');
+          option.value = crop;
+          option.textContent = crop;
+          itemSelect.appendChild(option);
+      });
+
+      // Auto-fill current year if not already filled by server
+      const yearInput = document.getElementById('Year');
+      if (!yearInput.value) {
+        yearInput.value = new Date().getFullYear();
+      }
+      
+      const form = document.getElementById('predictionForm');
+      const predictBtn = document.getElementById('predictBtn');
+      const btnText = document.getElementById('btn-text');
+      const loader = document.getElementById('loader');
+
+      form.addEventListener('submit', function(e) {
+        if (!validateForm()) { 
+          e.preventDefault(); // Stop submission only if validation fails
+        } else {
+          // Show loading state when form is submitted
+          btnText.textContent = 'Predicting...';
+          loader.classList.remove('hidden');
+          predictBtn.disabled = true;
+        }
+      });
+
+      // --- SCRIPT TO RUN ONLY IF PREDICTION EXISTS ---
+      // This script checks if the result div (which is only created by Flask if a prediction exists) is on the page.
+      const resultDiv = document.getElementById('result');
+      if (resultDiv) {
+        resultDiv.style.animation = 'fadeInFromBottom 1s ease-out';
+        
+        const yieldValueEl = document.getElementById('yieldValue');
+        const gaugeProgress = document.getElementById('gauge-progress');
+        const circumference = 2 * Math.PI * 45;
+
+        // Read the prediction from the data-prediction attribute for safety
+        const predictionValue = parseFloat(resultDiv.dataset.prediction);
+        
+        // --- Animate Gauge and Value ---
+        if (!isNaN(predictionValue)) { // Check if predictionValue is a valid number
+            const maxYield = 50000; // Adjusted max yield for hg/ha
+            const percentage = Math.min(predictionValue / maxYield, 1);
+            const offset = circumference - percentage * circumference;
+            gaugeProgress.style.strokeDashoffset = offset;
+            
+            let start = 0;
+            const end = predictionValue;
+            const duration = 1500;
+            const stepTime = 10;
+            const increment = end / (duration / stepTime);
+            let current = start;
+            
+            const timer = setInterval(() => {
+              current += increment;
+              if (current >= end) {
+                clearInterval(timer);
+                current = end;
+              }
+              yieldValueEl.textContent = current.toFixed(2);
+            }, stepTime);
+            
+            // --- Update Suggestion Box ---
+            const suggestionTitle = document.getElementById('suggestionTitle');
+            const suggestionText = document.getElementById('suggestionText');
+            if (predictionValue > 30000) {
+                suggestionTitle.textContent = "Excellent Yield!";
+                suggestionText.textContent = "Your conditions are optimal. Maintain current practices and consider forward selling to lock in prices.";
+            } else if (predictionValue > 15000) {
+                suggestionTitle.textContent = "Good Yield";
+                suggestionText.textContent = "This is a solid result. Consider soil nutrient analysis to identify areas for marginal improvement next season.";
+            } else {
+                suggestionTitle.textContent = "Below Average Yield";
+                suggestionText.textContent = "There's room for improvement. We recommend checking soil pH, reviewing your pest management strategy, and ensuring optimal irrigation.";
+            }
+        } else {
+            // Handle case where prediction is not a number
+            document.getElementById('yieldValue').textContent = "Error";
+            document.getElementById('suggestionTitle').textContent = "Prediction Error";
+            document.getElementById('suggestionText').textContent = "Could not parse the prediction value from the server. Please check the model output.";
+        }
+      }
+    });
+  </script>
+</body>
+</html>
+

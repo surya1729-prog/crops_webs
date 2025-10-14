@@ -1,0 +1,7 @@
+Flask
+numpy
+pickle-mixin
+joblib
+scikit-learn
+#tensorflow   # only if pest detection enabled
+
