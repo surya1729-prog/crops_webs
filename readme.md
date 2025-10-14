@@ -255,11 +255,11 @@ PEST_DETECTION_ENABLED=False
 
 | Member           | Role                   | Responsibilities                               |
 |------------------|-----------------------|------------------------------------------------|
-| Mahammad Usman   | ML Engineer & Backend | Model development, Flask backend integration |
-| Team Member 2    | Frontend/UI Developer | Tailwind UI, chatbot integration              |
-| Team Member 3    | Data Engineer         | Data preprocessing, cleaning, model evaluation|
-| Team Member 4    | Documentation Lead    | Report writing and hackathon presentation    |
-| Team Member 5    | DevOps Engineer       | Deployment and cloud configuration           |
+| Mahammad Usman   | ML Model Developer                | Model development, Flask backend integration |
+| Naru surya charan| Frontend/UI Developer             | Tailwind UI, chatbot integration             |
+| Mohammad sajid   | Back-End Developer                | Data preprocessing, cleaning, model evaluation|
+| Ibrahim          | Documentation and presentation lead|Report writing and hackathon presentation    |
+| Ilakkiya         | UI/UX Designer                   | Making rich interfaces                         |
 
 ---
 
